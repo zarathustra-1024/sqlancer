@@ -3,6 +3,7 @@ package sqlancer.derby;
 import com.google.auto.service.AutoService;
 import sqlancer.*;
 import sqlancer.common.log.LoggableFactory;
+import sqlancer.common.log.SQLLoggableFactory;
 import sqlancer.common.oracle.CompositeTestOracle;
 import sqlancer.common.oracle.TestOracle;
 import sqlancer.common.query.SQLQueryAdapter;
@@ -147,6 +148,6 @@ public class DerbyProvider extends ProviderAdapter<DerbyGlobalState, DerbyOption
 
     @Override
     public LoggableFactory getLoggableFactory() {
-        return null;
+        return new SQLLoggableFactory();
     }
 }

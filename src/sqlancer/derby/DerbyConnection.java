@@ -8,6 +8,8 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
+import static java.sql.DriverManager.getConnection;
+
 public class DerbyConnection extends SQLConnection implements SQLancerDBConnection {
 
     public DerbyConnection(Connection connection) {
@@ -55,14 +57,14 @@ public class DerbyConnection extends SQLConnection implements SQLancerDBConnecti
 
     @Override
     public String getDatabaseVersion() throws SQLException {
-        try (Statement stmt = createStatement();
-             ResultSet rs = stmt.executeQuery(
-                     "VALUES (syscs_util.syscs_get_database_property('DataBaseProductVersion'))")) {
-            if (rs.next()) {
-                return "Apache Derby " + rs.getString(1);
-            }
+        try {
+            DatabaseMetaData metaData = this.getConnection().getMetaData();
+            String version = metaData.getDatabaseProductVersion();
+            return "Apache Derby " + (version != null ? version : "Unknown Version");
+        } catch (SQLException e) {
+            System.err.println("Failed to get version from metadata: " + e.getMessage());
+            return "Apache Derby";
         }
-        return "Apache Derby";
     }
 
     public void executeBatch(List<String> queries) throws SQLException {

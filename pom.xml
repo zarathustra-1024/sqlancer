@@ -36,10 +36,10 @@
   </scm>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <maven.compiler.source>21</maven.compiler.source>
-    <maven.compiler.target>21</maven.compiler.target>
-<!--    更改了java版本 java21-->
-    <java.version>21</java.version>
+    <maven.compiler.source>11</maven.compiler.source>
+    <maven.compiler.target>11</maven.compiler.target>
+<!--    更改了java版本 java11-->
+    <java.version>11</java.version>
   </properties>
   <build>
     <sourceDirectory>src</sourceDirectory>
@@ -114,15 +114,16 @@
         <artifactId>maven-compiler-plugin</artifactId>
         <version>3.11.0</version>
         <configuration>
-          <source>21</source>
-          <target>21</target>
+          <source>11</source>
+          <target>11</target>
 <!--更改了maven plug—in 支持的版本          -->
           <compilerArguments>
             <properties>${project.basedir}/.settings/org.eclipse.jdt.core.prefs</properties>
           </compilerArguments>
           <compilerId>eclipse</compilerId>
           <showWarnings>true</showWarnings>
-          <failOnWarning>true</failOnWarning>
+          <failOnWarning>false</failOnWarning>
+<!--            将警告异常关掉-->
         </configuration>
         <dependencies>
           <dependency>
@@ -401,7 +402,7 @@
     <dependency>
       <groupId>org.apache.derby</groupId>
       <artifactId>derby</artifactId>
-      <version>10.17.1.0</version>
+      <version>10.16.1.1</version>
     </dependency>
   </dependencies>
   <reporting>

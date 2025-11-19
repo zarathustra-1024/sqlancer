@@ -1,9 +1,7 @@
 package sqlancer.derby;
 
-import sqlancer.OracleFactory;
-import sqlancer.ProviderAdapter;
-import sqlancer.IgnoreMeException;
-import sqlancer.SQLConnection;
+import com.google.auto.service.AutoService;
+import sqlancer.*;
 import sqlancer.common.log.LoggableFactory;
 import sqlancer.common.oracle.CompositeTestOracle;
 import sqlancer.common.oracle.TestOracle;
@@ -17,6 +15,7 @@ import java.util.stream.Collectors;
 /**
  * Derby 数据库适配器主入口点
  */
+@AutoService(DatabaseProvider.class)
 public class DerbyProvider extends ProviderAdapter<DerbyGlobalState, DerbyOptions, DerbyConnection> {
 
     public DerbyProvider() {

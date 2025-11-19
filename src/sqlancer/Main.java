@@ -32,6 +32,7 @@ import sqlancer.common.log.Loggable;
 import sqlancer.common.query.Query;
 import sqlancer.common.query.SQLancerResultSet;
 import sqlancer.databend.DatabendProvider;
+import sqlancer.derby.DerbyProvider;
 import sqlancer.doris.DorisProvider;
 import sqlancer.duckdb.DuckDBProvider;
 import sqlancer.h2.H2Provider;
@@ -768,6 +769,7 @@ public final class Main {
             providers.add(new TiDBProvider());
             providers.add(new YCQLProvider());
             providers.add(new YSQLProvider());
+            providers.add(new DerbyProvider());
         }
     }
 

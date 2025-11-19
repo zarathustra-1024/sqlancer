@@ -4,7 +4,7 @@ public class TableIndex {
 
     private final String indexName;
 
-    protected TableIndex(String indexName) {
+    public TableIndex(String indexName) {
         this.indexName = indexName;
     }
 

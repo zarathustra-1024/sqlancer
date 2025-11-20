@@ -34,8 +34,14 @@ public class DerbyGlobalState extends GlobalState<DerbyOptions, DerbySchema, Der
                 getDbmsSpecificOptions().getDbPath());
         DerbyConnection connection = new DerbyConnection(DriverManager.getConnection(url));
         System.out.println(connection.getDatabaseVersion());
-        setConnection(connection);// 根据DerbyConnection类 创建链接
-        System.out.println("Connected to Derby"); // debugging
+        setConnection(connection);
+        if (connection.isValid()) {
+            System.out.println("Connected to Derby"); // 根据DerbyConnection类 创建链接
+        }
+        else {
+            System.out.println("INVALID CONNECTION");
+        }
+        // debugging
     }
 
     @Override

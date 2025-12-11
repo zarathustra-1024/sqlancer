@@ -36,13 +36,12 @@ public class DerbyGlobalState extends GlobalState<DerbyOptions, DerbySchema, Der
         String url = String.format("jdbc:derby:%s;create=true",
                 getDbmsSpecificOptions().getDbPath());
         DerbyConnection connection = new DerbyConnection(DriverManager.getConnection(url));
-        System.out.println(connection.getDatabaseVersion());
         setConnection(connection);
         if (connection.isValid()) {
-            System.out.println("Connected to Derby");
+            loggerNew.logInfo("Connected to "+connection.getDatabaseVersion());
         }
         else {
-            System.out.println("INVALID CONNECTION");
+            loggerNew.logInfo("INVALID CONNECTION");
         }
         // debugging
     }
@@ -129,7 +128,7 @@ public class DerbyGlobalState extends GlobalState<DerbyOptions, DerbySchema, Der
         DerbySchema newSchema = readSchema();
         setSchema(newSchema);
         int tableCount = newSchema != null ? newSchema.getDatabaseTables().size() : 0;
-        getLoggerNew().logInfo("Schema refreshed, now has " + tableCount + " tables");
+        loggerNew.logInfo("Schema refreshed, now has " + tableCount + " tables");
     }
 
     public int getTableCount() {

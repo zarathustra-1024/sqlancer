@@ -6,8 +6,8 @@ public class DerbyColumn extends AbstractTableColumn<DerbyTable, DerbyDataType> 
 
     private final String dataType;
 
-    public DerbyColumn(String name, String dataType) {
-        super(name, null, null);
+    public DerbyColumn(String name, DerbyTable table, String dataType) {
+        super(name, table, DerbyDataType.fromString(dataType));
         this.dataType = dataType;
     }
 
@@ -17,6 +17,10 @@ public class DerbyColumn extends AbstractTableColumn<DerbyTable, DerbyDataType> 
 
     @Override
     public DerbyDataType getType() {
-        return DerbyDataType.fromString(dataType);
+        return super.getType();
+    }
+
+    public String getFullType() {
+        return dataType;
     }
 }

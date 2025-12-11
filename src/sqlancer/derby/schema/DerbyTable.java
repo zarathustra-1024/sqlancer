@@ -14,7 +14,11 @@ public class DerbyTable extends AbstractTable<DerbyColumn, TableIndex, DerbyGlob
     }
 
     public DerbyColumn getRandomColumn() {
-        return Randomly.fromList(getColumns());
+        List<DerbyColumn> columns = getColumns();
+        if (columns.isEmpty()) {
+            return null;
+        }
+        return Randomly.fromList(columns);
     }
 
     @Override

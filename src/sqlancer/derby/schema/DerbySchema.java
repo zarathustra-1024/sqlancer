@@ -6,7 +6,6 @@ import sqlancer.common.schema.AbstractSchema;
 import sqlancer.common.schema.TableIndex;
 import sqlancer.derby.DerbyGlobalState;
 
-
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -30,6 +29,7 @@ public class DerbySchema extends AbstractSchema<DerbyGlobalState, DerbyTable> {
             List<DerbyColumn> columns = getTableColumns(connection, tableName);
             List<TableIndex> indexes = getTableIndexes(connection, tableName);
 
+            // 创建表对象
             DerbyTable table = new DerbyTable(tableName, columns, indexes);
             tables.add(table);
         }
@@ -41,51 +41,95 @@ public class DerbySchema extends AbstractSchema<DerbyGlobalState, DerbyTable> {
             throws SQLException {
         List<DerbyColumn> columns = new ArrayList<>();
 
+        // 方法1：尝试使用 DatabaseMetaData（推荐）
         try {
             DatabaseMetaData metaData = connection.getConnection().getMetaData();
-            // 使用 DatabaseMetaData 获取列信息，避免 TypeDescriptorImpl 转换问题
             try (ResultSet rs = metaData.getColumns(null, "APP", tableName, "%")) {
                 while (rs.next()) {
                     String columnName = rs.getString("COLUMN_NAME");
                     String dataType = rs.getString("TYPE_NAME");
                     int columnSize = rs.getInt("COLUMN_SIZE");
 
-                    // 如果类型包含大小信息，添加到类型字符串中
+                    // 处理带大小的类型
                     if (columnSize > 0 && (dataType.equals("VARCHAR") || dataType.equals("CHAR"))) {
                         dataType = dataType + "(" + columnSize + ")";
+                    } else if (dataType.equals("DECIMAL") || dataType.equals("NUMERIC")) {
+                        int decimalDigits = rs.getInt("DECIMAL_DIGITS");
+                        dataType = dataType + "(" + columnSize + "," + decimalDigits + ")";
                     }
 
-                    columns.add(new DerbyColumn(columnName, dataType));
+                    columns.add(new DerbyColumn(columnName, null, dataType));
                 }
             }
-        } catch (SQLException e) {
-            // 如果 DatabaseMetaData 失败，回退到原始查询，但需要处理 TypeDescriptorImpl
-            System.err.println("Warning: Using fallback method for column metadata: " + e.getMessage());
+            return columns;
+        } catch (Exception e) {
+            System.err.println("Warning: DatabaseMetaData failed, using fallback method: " + e.getMessage());
+        }
 
-            // 原始查询（需要修复）
-            String query = String.format(
-                    "SELECT columnname, CAST(columndatatype AS VARCHAR(1000)) FROM sys.syscolumns c, sys.systables t " +
-                            "WHERE c.referenceid = t.tableid AND t.tablename = '%s'", tableName);
+        // 方法2：使用简化的查询，避免 CASE 表达式中的 LIKE
+        try {
+            // 使用 SUBSTRING 和位置检查来代替 LIKE
+            String query =
+                    "SELECT columnname, " +
+                            "CASE " +
+                            "  WHEN SUBSTR(columndatatype, 1, 7) = 'INTEGER' THEN 'INTEGER' " +
+                            "  WHEN SUBSTR(columndatatype, 1, 7) = 'VARCHAR' THEN 'VARCHAR' " +
+                            "  WHEN SUBSTR(columndatatype, 1, 4) = 'CHAR' THEN 'CHAR' " +
+                            "  WHEN SUBSTR(columndatatype, 1, 6) = 'DOUBLE' THEN 'DOUBLE' " +
+                            "  WHEN SUBSTR(columndatatype, 1, 4) = 'DATE' THEN 'DATE' " +
+                            "  WHEN SUBSTR(columndatatype, 1, 9) = 'TIMESTAMP' THEN 'TIMESTAMP' " +
+                            "  WHEN SUBSTR(columndatatype, 1, 7) = 'BOOLEAN' THEN 'BOOLEAN' " +
+                            "  WHEN SUBSTR(columndatatype, 1, 8) = 'SMALLINT' THEN 'SMALLINT' " +
+                            "  WHEN SUBSTR(columndatatype, 1, 6) = 'BIGINT' THEN 'BIGINT' " +
+                            "  WHEN SUBSTR(columndatatype, 1, 4) = 'REAL' THEN 'REAL' " +
+                            "  WHEN SUBSTR(columndatatype, 1, 7) = 'DECIMAL' THEN 'DECIMAL' " +
+                            "  WHEN SUBSTR(columndatatype, 1, 5) = 'FLOAT' THEN 'FLOAT' " +
+                            "  WHEN SUBSTR(columndatatype, 1, 4) = 'TIME' THEN 'TIME' " +
+                            "  WHEN SUBSTR(columndatatype, 1, 4) = 'BLOB' THEN 'BLOB' " +
+                            "  WHEN SUBSTR(columndatatype, 1, 4) = 'CLOB' THEN 'CLOB' " +
+                            "  ELSE 'VARCHAR' " +
+                            "END as datatype " +
+                            "FROM sys.syscolumns c, sys.systables t " +
+                            "WHERE c.referenceid = t.tableid AND t.tablename = '" + tableName + "'";
 
             List<List<Object>> columnResults = connection.executeAndGet(query);
 
             for (List<Object> row : columnResults) {
                 String columnName = (String) row.get(0);
                 String dataType = (String) row.get(1);
-                columns.add(new DerbyColumn(columnName, dataType));
+                columns.add(new DerbyColumn(columnName, null, dataType));
             }
-        }
 
-        return columns;
+            return columns;
+        } catch (Exception e) {
+            System.err.println("Warning: Fallback method also failed: " + e.getMessage());
+
+            // 方法3：使用最简单的查询，不进行类型映射
+            try {
+                String query = "SELECT columnname, 'VARCHAR' as datatype " +
+                        "FROM sys.syscolumns c, sys.systables t " +
+                        "WHERE c.referenceid = t.tableid AND t.tablename = '" + tableName + "'";
+
+                List<List<Object>> columnResults = connection.executeAndGet(query);
+
+                for (List<Object> row : columnResults) {
+                    String columnName = (String) row.get(0);
+                    columns.add(new DerbyColumn(columnName, null, "VARCHAR"));
+                }
+            } catch (Exception e2) {
+                System.err.println("Error: All methods failed to get column information: " + e2.getMessage());
+                // 返回空列表，让表至少能被创建
+            }
+
+            return columns;
+        }
     }
 
     private static List<TableIndex> getTableIndexes(DerbyConnection connection, String tableName)
             throws SQLException {
         try {
-            // 使用 Derby 的系统表查询索引
-            String query = String.format(
-                    "SELECT i.indexname FROM sys.sysindexes i, sys.systables t " +
-                            "WHERE i.tableid = t.tableid AND t.tablename = '%s'", tableName);
+            String query = "SELECT conglomeratename FROM sys.sysconglomerates WHERE tableid = " +
+                    "(SELECT tableid FROM sys.systables WHERE tablename = '" + tableName + "') AND isindex = true";
 
             List<List<Object>> indexResults = connection.executeAndGet(query);
             List<TableIndex> indexes = new ArrayList<>();
@@ -101,13 +145,10 @@ public class DerbySchema extends AbstractSchema<DerbyGlobalState, DerbyTable> {
         }
     }
 
-    // ========== FIX: 添加 getDatabaseTables() 方法适配 AbstractSchema 接口 ==========
     public List<DerbyTable> getDatabaseTables() {
-        // 返回所有表（不过滤任何表），使用 getTables(t -> true) 实现
         return getTables(t -> true);
     }
 
-    // ========== MOD: 修正 getRandomTable() 方法，使用 getDatabaseTables() 而不是直接调用 getTables() ==========
     @Override
     public DerbyTable getRandomTable() {
         List<DerbyTable> tables = getDatabaseTables();

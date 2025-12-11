@@ -2,23 +2,58 @@ package sqlancer.derby.schema;
 
 import sqlancer.Randomly;
 
-/**
- * Derby 数据类型枚举
- * 定义支持的数据库类型和随机选择逻辑
- */
 public enum DerbyDataType {
-    INTEGER, VARCHAR, DATE, TIMESTAMP;
+    INTEGER,
+    VARCHAR,
+    DATE,
+    TIMESTAMP,
+    DOUBLE,
+    CHAR,
+    BOOLEAN,
+    SMALLINT,
+    BIGINT,
+    REAL,
+    DECIMAL,
+    NUMERIC,
+    FLOAT,
+    TIME,
+    BLOB,
+    CLOB;
 
     public static DerbyDataType getRandom() {
         return Randomly.fromOptions(values());
     }
 
     public static DerbyDataType fromString(String typeName) {
+        if (typeName == null || typeName.isEmpty()) {
+            return VARCHAR;
+        }
+
+        String upperType = typeName.toUpperCase();
+        if (upperType.contains("(")) {
+            upperType = upperType.substring(0, upperType.indexOf("("));
+        }
+
         for (DerbyDataType type : DerbyDataType.values()) {
-            if (typeName.toUpperCase().contains(type.name())) {
+            if (upperType.contains(type.name())) {
                 return type;
             }
         }
-        return VARCHAR; // 默认返回 VARCHAR
+
+        if (upperType.contains("INT") && !upperType.contains("BIGINT") && !upperType.contains("SMALLINT")) {
+            return INTEGER;
+        } else if (upperType.contains("NUMERIC") || upperType.contains("DEC")) {
+            return DECIMAL;
+        } else if (upperType.contains("FLOAT")) {
+            return FLOAT;
+        } else if (upperType.contains("BOOL")) {
+            return BOOLEAN;
+        } else if (upperType.contains("STRING") || upperType.contains("TEXT")) {
+            return VARCHAR;
+        } else if (upperType.contains("CHARACTER")) {
+            return CHAR;
+        }
+
+        return VARCHAR;
     }
 }

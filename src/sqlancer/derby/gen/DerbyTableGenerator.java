@@ -19,14 +19,16 @@ public class DerbyTableGenerator {
     // ========== 新增：指定表名的创建方法 ==========
     public static String generateCreateTableWithName(DerbyGlobalState globalState, String tableName) {
         List<String> columns = new ArrayList<>();
-        int columnCount = 2 + globalState.getRandomly().getInteger(0, 2);
+        int columnCount = 2 + globalState.getRandomly().getInteger(0, 3);
 
-        for (int i = 0; i < columnCount; i++) {
-            String columnName = "c" + i;
+        columns.add("id INTEGER NOT NULL");
+
+        for (int i = 1; i < columnCount; i++) {
+            String columnName = "col" + i;
             String type = getRandomType();
             String definition = columnName + " " + type;
 
-            if (Randomly.getBoolean()) {
+            if (Randomly.getBoolean() && !type.contains("TIMESTAMP")) {
                 definition += " NOT NULL";
             }
 
@@ -37,7 +39,23 @@ public class DerbyTableGenerator {
     }
 
     private static String getRandomType() {
-        String[] types = {"INTEGER", "VARCHAR(50)", "DOUBLE", "DATE"};
+        String[] types = {
+                "INTEGER",
+                "VARCHAR(50)",
+                "CHAR(20)",
+                "DATE",
+                "TIMESTAMP",
+                "DOUBLE",
+                "BOOLEAN",
+                "SMALLINT",
+                "BIGINT",
+                "REAL",
+                "DECIMAL(10,2)",
+                "FLOAT",
+                "TIME",
+                "BLOB",
+                "CLOB"
+        };
         return Randomly.fromOptions(types);
     }
 }

@@ -11,7 +11,6 @@ import java.util.List;
 public class DerbyInsertGenerator {
 
     public static String generateInsert(DerbyGlobalState globalState) {
-        // MOD: 使用 getDatabaseTables() 而不是 getTables() 检查schema状态
         if (globalState.getSchema() == null || globalState.getSchema().getDatabaseTables().isEmpty()) {
             throw new IllegalStateException("Cannot generate INSERT: schema is empty or not initialized");
         }
@@ -19,19 +18,17 @@ public class DerbyInsertGenerator {
         DerbyTable table = globalState.getSchema().getRandomTable();
         List<DerbyColumn> columns = table.getColumns();
 
-        // ========== FIX: 添加列检查，防止空列列表导致的问题 ==========
         if (columns.isEmpty()) {
             return generateSimpleInsert(globalState, table.getName());
         }
 
+        DerbyExpressionGenerator gen = new DerbyExpressionGenerator(globalState);
         List<String> columnNames = new ArrayList<>();
         List<String> values = new ArrayList<>();
 
-        DerbyExpressionGenerator gen = new DerbyExpressionGenerator(globalState);
-
         for (DerbyColumn column : columns) {
             columnNames.add(column.getName());
-            values.add(gen.generateConstant());
+            values.add(gen.generateValueForType(column.getType()));
         }
 
         return String.format("INSERT INTO %s (%s) VALUES (%s)",
@@ -42,22 +39,7 @@ public class DerbyInsertGenerator {
 
     // ========== ADD: 新增简单插入生成方法，用于处理空列的情况 ==========
     private static String generateSimpleInsert(DerbyGlobalState globalState, String tableName) {
-        DerbyExpressionGenerator gen = new DerbyExpressionGenerator(globalState);
-
-        StringBuilder columns = new StringBuilder();
-        StringBuilder values = new StringBuilder();
-
-        int columnCount = 2;
-        for (int i = 0; i < columnCount; i++) {
-            if (i > 0) {
-                columns.append(", ");
-                values.append(", ");
-            }
-            columns.append("col").append(i);
-            values.append(gen.generateConstant());
-        }
-
-        return String.format("INSERT INTO %s (%s) VALUES (%s)",
-                tableName, columns.toString(), values.toString());
+        return String.format("INSERT INTO %s (id) VALUES (%d)",
+                tableName, globalState.getRandomly().getInteger(1, 100));
     }
 }

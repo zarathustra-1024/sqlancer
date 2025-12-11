@@ -11,13 +11,11 @@ public enum DerbyOracleFactory implements OracleFactory<DerbyGlobalState> {
     NOREC {
         @Override
         public TestOracle<DerbyGlobalState> create(DerbyGlobalState globalState) throws Exception {
-//            return new DerbyNoRECOracle(globalState)
-            return null;
+            return new DerbyNoRECOracle(globalState);
         }
 
         @Override
         public boolean requiresAllTablesToContainRows() {
-            // NoREC Oracle 不要求所有表都必须有数据
             return false;
         }
     };

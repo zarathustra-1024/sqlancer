@@ -39,7 +39,7 @@ public class DerbyGlobalState extends GlobalState<DerbyOptions, DerbySchema, Der
         System.out.println(connection.getDatabaseVersion());
         setConnection(connection);
         if (connection.isValid()) {
-            System.out.println("Connected to Derby"); // 根据DerbyConnection类 创建链接
+            System.out.println("Connected to Derby");
         }
         else {
             System.out.println("INVALID CONNECTION");
@@ -55,13 +55,11 @@ public class DerbyGlobalState extends GlobalState<DerbyOptions, DerbySchema, Der
 
     @Override
     protected void executeEpilogue(Query<?> q, boolean success, ExecutionTimer timer) throws Exception {
-        // 查询执行后的处理逻辑
         if (timer != null && getOptions().logExecutionTime()) {
             timer.end();
             loggerNew.logTime(timer.asString());
         }
         if (!success) {
-            // 记录失败的查询
             loggerNew.logCurrentState("Query failed: " + q.getLogString());
         }
     }
@@ -121,7 +119,6 @@ public class DerbyGlobalState extends GlobalState<DerbyOptions, DerbySchema, Der
     private String removeTrailingSemicolon(String sql) {
         // 如果 SQL 以分号结尾，移除它
         if (sql.endsWith(";")) {
-//            System.out.println("Removing trailing semicolon from SQL: " + sql);
             return sql.substring(0, sql.length() - 1);
         }
         return sql;
@@ -129,11 +126,8 @@ public class DerbyGlobalState extends GlobalState<DerbyOptions, DerbySchema, Der
 
     // ========== FIX: 添加强制刷新schema的方法，解决表创建后schema缓存未更新的问题 ==========
     public void refreshSchema() throws Exception {
-        // 强制重新读取schema
         DerbySchema newSchema = readSchema();
         setSchema(newSchema);
-
-        // MOD: 使用 getDatabaseTables() 而不是 getTables()，因为 getTables() 需要 Predicate 参数
         int tableCount = newSchema != null ? newSchema.getDatabaseTables().size() : 0;
         getLoggerNew().logInfo("Schema refreshed, now has " + tableCount + " tables");
     }
@@ -142,7 +136,6 @@ public class DerbyGlobalState extends GlobalState<DerbyOptions, DerbySchema, Der
         if (getSchema() == null) {
             return 0;
         }
-        // MOD: 使用 getDatabaseTables() 而不是 getTables()
         return getSchema().getDatabaseTables().size();
     }
 

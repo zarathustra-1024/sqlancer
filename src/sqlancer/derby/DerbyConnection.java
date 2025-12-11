@@ -84,4 +84,15 @@ public class DerbyConnection extends SQLConnection implements SQLancerDBConnecti
             return false;
         }
     }
+
+    public void execute(String query) throws SQLException {
+        try (Statement stmt = this.getConnection().createStatement()) {
+            stmt.execute(query);
+            this.getConnection().commit();
+        } catch (SQLException e) {
+            this.getConnection().rollback();
+            throw e;
+        }
+    }
+
 }

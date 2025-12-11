@@ -8,6 +8,7 @@ import sqlancer.common.oracle.CompositeTestOracle;
 import sqlancer.common.oracle.TestOracle;
 import sqlancer.common.query.SQLQueryAdapter;
 import sqlancer.common.query.Query;
+import sqlancer.derby.gen.DerbyInsertGenerator;
 
 import java.sql.SQLException;
 import java.util.List;
@@ -31,7 +32,7 @@ public class DerbyProvider extends ProviderAdapter<DerbyGlobalState, DerbyOption
     @Override
     public void generateDatabase(DerbyGlobalState globalState) throws Exception {
         globalState.initializeConnection();
-//        globalState.generateDatabase();
+        globalState.generateDatabase();
     }
 
     @Override
@@ -73,67 +74,65 @@ public class DerbyProvider extends ProviderAdapter<DerbyGlobalState, DerbyOption
 
     @Override
     protected String getQueryPlan(String selectStr, DerbyGlobalState globalState) throws Exception {
-//        String explainQuery = "EXPLAIN " + selectStr;
-//        try {
-//            SQLQueryAdapter query = new SQLQueryAdapter(explainQuery);
-//
-//            var resultSet = globalState.executeStatementAndGet(query);
-//
-//            StringBuilder planBuilder = new StringBuilder();
-//            while (resultSet.next()) {
-//                planBuilder.append(resultSet.getString(1)).append("\n");
-//            }
-//
-//            return planBuilder.toString().trim();
-//        } catch (Exception e) {
-//            return "";
-//        }
-        return "";
+        String explainQuery = "EXPLAIN " + selectStr;
+        try {
+            SQLQueryAdapter query = new SQLQueryAdapter(explainQuery);
+            var resultSet = globalState.executeStatementAndGetAsResultSet(query);
+
+            StringBuilder planBuilder = new StringBuilder();
+            while (resultSet.next()) {
+                planBuilder.append(resultSet.getString(1)).append("\n");
+            }
+
+            return planBuilder.toString().trim();
+        } catch (Exception e) {
+            return "";
+        }
     }
 
     @Override
     protected void executeMutator(int index, DerbyGlobalState globalState) throws Exception {
-//        try {
-//            var schema = globalState.getSchema();
-//            if (!schema.getDatabaseTables().isEmpty()) {
-//                var table = schema.getRandomTable();
-//                var column = table.getRandomColumn();
-//
-//                String updateQuery = String.format(
-//                        "UPDATE %s SET %s = %s WHERE RAND() < 0.1",
-//                        table.getName(),
-//                        column.getName(),
-//                        globalState.getRandomly().getInteger()
-//                );
-//
-//                globalState.executeSQL(updateQuery);
-//            }
-//        } catch (Exception e) {
-//            throw new IgnoreMeException();
-//        }
+        try {
+            var schema = globalState.getSchema();
+            if (!schema.getDatabaseTables().isEmpty()) {
+                var table = schema.getRandomTable();
+                var column = table.getRandomColumn();
+
+                String updateQuery = String.format(
+                        "UPDATE %s SET %s = %s WHERE RAND() < 0.1",
+                        table.getName(),
+                        column.getName(),
+                        globalState.getRandomly().getInteger()
+                );
+
+                globalState.executeSQL(updateQuery);
+            }
+        } catch (Exception e) {
+            throw new IgnoreMeException();
+        }
     }
 
     @Override
     protected boolean addRowsToAllTables(DerbyGlobalState globalState) throws Exception {
-//        boolean addedRows = false;
-//        var schema = globalState.getSchema();
-//
-//        for (var table : schema.getDatabaseTables()) {
-//            if (table.getNrRows(globalState) == 0) {
-//                for (int i = 0; i < 5; i++) {
-//                    String insertQuery = DerbyInsertGenerator.generateInsert(globalState);
-//                    try {
-//                        globalState.executeSQL(insertQuery);
-//                        addedRows = true;
-//                    } catch (Exception e) {
-//                        // 继续尝试其他表
-//                    }
-//                }
-//            }
-//        }
-//
-//        return addedRows;
-        return true;
+        boolean addedRows = false;
+        var schema = globalState.getSchema();
+
+        for (var table : schema.getDatabaseTables()) {
+            if (table.getNrRows(globalState) == 0) {
+                for (int i = 0; i < 5; i++) {
+                    String insertQuery = DerbyInsertGenerator.generateInsert(globalState);
+                    try {
+                        globalState.executeSQL(insertQuery);
+                        addedRows = true;
+                    } catch (Exception e) {
+                        // 继续尝试其他表
+                    }
+                }
+            }
+        }
+
+        return addedRows;
+
     }
 
     @Override

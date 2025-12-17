@@ -23,30 +23,48 @@ public class DerbyNoRECOracle implements TestOracle<DerbyGlobalState> {
     @Override
     public void check() throws SQLException {
         try {
-            String originalQuery = generateSimpleSelectQuery();
+            var originalQuery = generateSimpleSelectQuery();
             this.lastQueryString = originalQuery;
 
-            String optimizedQuery = generateOptimizedQuery(originalQuery);
+            var optimizedQuery = generateOptimizedQuery(originalQuery);
 
-            SQLQueryAdapter originalSql = new SQLQueryAdapter(originalQuery);
-            SQLQueryAdapter optimizedSql = new SQLQueryAdapter(optimizedQuery);
+            var originalSql = new SQLQueryAdapter(originalQuery);
+            var optimizedSql = new SQLQueryAdapter(optimizedQuery);
+
+            // 记录查询到控制台
+            state.getLoggerNew().logQuery("NoREC test query: " + originalQuery);
 
             var originalResult = state.executeStatementAndGet(originalSql);
             var optimizedResult = state.executeStatementAndGet(optimizedSql);
 
             if (!resultsAreEqual(originalResult, optimizedResult)) {
-                state.getLoggerNew().logCurrentState("NoREC test failed: Results differ!");
+                // 记录错误到文件（包含DQL）
+                state.getLoggerNew().logError("NoREC test failed: Results differ!", originalQuery);
                 state.getLoggerNew().logQuery("Original: " + originalQuery);
                 state.getLoggerNew().logQuery("Optimized: " + optimizedQuery);
             } else {
+                // 成功信息只输出到控制台
                 state.getLoggerNew().logInfo("NoREC test passed for query: " + originalQuery);
             }
 
         } catch (Exception e) {
             if (!isExpectedError(e)) {
+                // 记录异常和DQL到文件
+                if (lastQueryString != null) {
+                    state.getLoggerNew().logException(e, lastQueryString);
+                } else {
+                    state.getLoggerNew().logException(e);
+                }
                 throw e;
             } else {
-                state.getLoggerNew().logInfo("Expected error in NoREC test: " + e.getMessage());
+                // 预期错误也记录到文件
+                var errorMsg = e.getMessage() != null ? e.getMessage() : e.toString();
+                if (lastQueryString != null) {
+                    state.getLoggerNew().logError("Expected error in NoREC test: " + errorMsg, lastQueryString);
+                } else {
+                    // 如果没有DQL，只输出到控制台
+                    state.getLoggerNew().logInfo("Expected error in NoREC test: " + errorMsg);
+                }
             }
         }
     }
@@ -56,16 +74,16 @@ public class DerbyNoRECOracle implements TestOracle<DerbyGlobalState> {
             throw new IllegalStateException("No tables available for NoREC test");
         }
 
-        DerbyTable table = state.getSchema().getRandomTable();
-        List<DerbyColumn> columns = table.getColumns();
+        var table = state.getSchema().getRandomTable();
+        var columns = table.getColumns();
 
         if (columns.isEmpty()) {
             return String.format("SELECT 1 FROM %s", table.getName());
         }
 
         DerbyColumn selectedColumn = null;
-        for (DerbyColumn column : columns) {
-            DerbyDataType type = column.getType();
+        for (var column : columns) {
+            var type = column.getType();
             if (type == DerbyDataType.INTEGER || type == DerbyDataType.DOUBLE ||
                     type == DerbyDataType.DECIMAL || type == DerbyDataType.BIGINT) {
                 selectedColumn = column;
@@ -77,7 +95,7 @@ public class DerbyNoRECOracle implements TestOracle<DerbyGlobalState> {
             selectedColumn = columns.get(0);
         }
 
-        StringBuilder sb = new StringBuilder();
+        var sb = new StringBuilder();
         sb.append("SELECT ");
         sb.append(selectedColumn.getName());
         sb.append(" FROM ").append(table.getName());
@@ -92,7 +110,7 @@ public class DerbyNoRECOracle implements TestOracle<DerbyGlobalState> {
     }
 
     private String generateOptimizedQuery(String originalQuery) {
-        String query = originalQuery.trim();
+        var query = originalQuery.trim();
         if (query.endsWith(";")) {
             query = query.substring(0, query.length() - 1);
         }
@@ -111,10 +129,10 @@ public class DerbyNoRECOracle implements TestOracle<DerbyGlobalState> {
     private boolean isExpectedError(Exception e) {
         if (e == null) return false;
 
-        String message = e.getMessage();
+        var message = e.getMessage();
         if (message == null) return false;
 
-        String upperMessage = message.toUpperCase();
+        var upperMessage = message.toUpperCase();
 
         return upperMessage.contains("DOES NOT EXIST") ||
                 upperMessage.contains("ALREADY EXISTS") ||

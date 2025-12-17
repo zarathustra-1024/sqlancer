@@ -21,7 +21,7 @@ public class DerbyLoggableFactory {
         if (errorLogFilePath != null && !errorLogFilePath.trim().isEmpty()) {
             try {
                 // 创建文件写入器（追加模式）
-                FileWriter fw = new FileWriter(errorLogFilePath, true);
+                var fw = new FileWriter(errorLogFilePath, true);
                 errorFileWriter = new PrintWriter(fw, true);
 
                 // 写入文件头
@@ -44,7 +44,7 @@ public class DerbyLoggableFactory {
      */
     private void writeToErrorFile(String message) {
         if (errorFileWriter != null) {
-            String timestamp = dateFormat.format(new Date());
+            var timestamp = dateFormat.format(new Date());
             errorFileWriter.println("[" + timestamp + "] " + message);
             errorFileWriter.flush();
         }
@@ -68,7 +68,7 @@ public class DerbyLoggableFactory {
      * 记录异常（同时输出到控制台和错误日志文件）
      */
     public void logException(Exception e) {
-        String errorMsg = e.getMessage() != null ? e.getMessage() : e.toString();
+        var errorMsg = e.getMessage() != null ? e.getMessage() : e.toString();
 
         // 控制台输出
         System.err.println("[DERBY ERROR] " + errorMsg);
@@ -79,8 +79,34 @@ public class DerbyLoggableFactory {
         // 如果启用了文件日志，记录堆栈跟踪（前5行）
         if (errorFileWriter != null) {
             errorFileWriter.println("Stack trace:");
-            StackTraceElement[] stackTrace = e.getStackTrace();
-            int limit = Math.min(stackTrace.length, 5);
+            var stackTrace = e.getStackTrace();
+            var limit = Math.min(stackTrace.length, 5);
+            for (int i = 0; i < limit; i++) {
+                errorFileWriter.println("  " + stackTrace[i]);
+            }
+            errorFileWriter.println();
+        }
+    }
+
+    /**
+     * 记录异常和关联的DQL语句（新增方法）
+     */
+    public void logException(Exception e, String dql) {
+        var errorMsg = e.getMessage() != null ? e.getMessage() : e.toString();
+
+        // 控制台输出
+        System.err.println("[DERBY ERROR] " + errorMsg);
+        System.err.println("[DERBY DQL] " + dql);
+
+        // 写入错误日志文件
+        writeToErrorFile("[ERROR] " + errorMsg);
+        writeToErrorFile("[DQL] " + dql);
+
+        // 如果启用了文件日志，记录堆栈跟踪（前5行）
+        if (errorFileWriter != null) {
+            errorFileWriter.println("Stack trace:");
+            var stackTrace = e.getStackTrace();
+            var limit = Math.min(stackTrace.length, 5);
             for (int i = 0; i < limit; i++) {
                 errorFileWriter.println("  " + stackTrace[i]);
             }
@@ -114,16 +140,15 @@ public class DerbyLoggableFactory {
     }
 
     /**
-     * 关闭错误日志文件
+     * 记录错误和关联的DQL语句（新增方法）
      */
-    public void closeErrorLog() {
-        if (errorFileWriter != null) {
-            writeToErrorFile("========================================");
-            writeToErrorFile("Log end time: " + dateFormat.format(new Date()));
-            writeToErrorFile("========================================");
-            errorFileWriter.close();
-            errorFileWriter = null;
-            System.out.println("[DERBY INFO] Error log file closed");
-        }
+    public void logError(String error, String dql) {
+        // 控制台输出
+        System.err.println("[DERBY ERROR] " + error);
+        System.err.println("[DERBY DQL] " + dql);
+
+        // 写入错误日志文件
+        writeToErrorFile("[ERROR] " + error);
+        writeToErrorFile("[DQL] " + dql);
     }
 }

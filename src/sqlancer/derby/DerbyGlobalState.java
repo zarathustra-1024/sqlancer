@@ -18,14 +18,14 @@ public class DerbyGlobalState extends GlobalState<DerbyOptions, DerbySchema, Der
     DerbyLoggableFactory loggerNew = new DerbyLoggableFactory();
 
     protected void initializeConnection() throws SQLException {
-        String url = String.format("jdbc:derby:%s;create=true",
+        var url = String.format("jdbc:derby:%s;create=true",
                 getDbmsSpecificOptions().getDbPath());
 
         var connection = new DerbyConnection(DriverManager.getConnection(url));
         setConnection(connection);
 
-        // 新增：初始化错误日志文件（只有3行）
-        String errorLogFile = getDbmsSpecificOptions().getErrorLogFile();
+        // 新增：初始化错误日志文件
+        var errorLogFile = getDbmsSpecificOptions().getErrorLogFile();
         if (errorLogFile != null && !errorLogFile.trim().isEmpty()) {
             loggerNew.initErrorLogFile(errorLogFile);
         }
@@ -64,20 +64,20 @@ public class DerbyGlobalState extends GlobalState<DerbyOptions, DerbySchema, Der
     }
 
     public void executeStatement(SQLQueryAdapter query) throws SQLException {
-        String sql = query.getQueryString();
-        String cleanedSql = removeTrailingSemicolon(sql.trim());
+        var sql = query.getQueryString();
+        var cleanedSql = removeTrailingSemicolon(sql.trim());
         getConnection().executeStatement(cleanedSql);
     }
 
     public List<List<Object>> executeStatementAndGet(SQLQueryAdapter query) throws SQLException {
-        String sql = query.getQueryString();
-        String cleanedSql = removeTrailingSemicolon(sql.trim());
+        var sql = query.getQueryString();
+        var cleanedSql = removeTrailingSemicolon(sql.trim());
         return getConnection().executeAndGet(cleanedSql);
     }
 
     public SQLancerResultSet executeStatementAndGetAsResultSet(SQLQueryAdapter query) throws SQLException {
-        String sql = query.getQueryString();
-        String cleanedSql = removeTrailingSemicolon(sql.trim());
+        var sql = query.getQueryString();
+        var cleanedSql = removeTrailingSemicolon(sql.trim());
         return getConnection().executeStatementAndGet(cleanedSql);
     }
 
@@ -86,12 +86,12 @@ public class DerbyGlobalState extends GlobalState<DerbyOptions, DerbySchema, Der
     }
 
     public void executeSQL(String sql) throws SQLException {
-        String cleanedSql = removeTrailingSemicolon(sql.trim());
+        var cleanedSql = removeTrailingSemicolon(sql.trim());
         getConnection().executeStatement(cleanedSql);
     }
 
     public List<List<Object>> executeQuery(String sql) throws SQLException {
-        String cleanedSql = removeTrailingSemicolon(sql.trim());
+        var cleanedSql = removeTrailingSemicolon(sql.trim());
         return getConnection().executeAndGet(cleanedSql);
     }
 
@@ -109,7 +109,7 @@ public class DerbyGlobalState extends GlobalState<DerbyOptions, DerbySchema, Der
     public void refreshSchema() throws Exception {
         var newSchema = readSchema();
         setSchema(newSchema);
-        int tableCount = newSchema != null ? newSchema.getDatabaseTables().size() : 0;
+        var tableCount = newSchema != null ? newSchema.getDatabaseTables().size() : 0;
         loggerNew.logInfo("Schema refreshed, now has " + tableCount + " tables");
     }
 

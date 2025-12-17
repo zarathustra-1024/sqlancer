@@ -73,7 +73,7 @@ public class DerbyProvider extends ProviderAdapter<DerbyGlobalState, DerbyOption
 
     @Override
     protected String getQueryPlan(String selectStr, DerbyGlobalState globalState) throws Exception {
-        String explainQuery = "EXPLAIN " + selectStr;
+        var explainQuery = "EXPLAIN " + selectStr;
         try {
             var query = new SQLQueryAdapter(explainQuery);
             var resultSet = globalState.executeStatementAndGetAsResultSet(query);
@@ -85,8 +85,8 @@ public class DerbyProvider extends ProviderAdapter<DerbyGlobalState, DerbyOption
 
             return planBuilder.toString().trim();
         } catch (Exception e) {
-            // 新增：记录异常到文件
-            globalState.getLoggerNew().logException(e);
+            // 新增：记录DQL错误
+            globalState.getLoggerNew().logException(e, explainQuery);
             return "";
         }
     }
@@ -99,7 +99,7 @@ public class DerbyProvider extends ProviderAdapter<DerbyGlobalState, DerbyOption
                 var table = schema.getRandomTable();
                 var column = table.getRandomColumn();
 
-                String updateQuery = String.format(
+                var updateQuery = String.format(
                         "UPDATE %s SET %s = %s WHERE RAND() < 0.1",
                         table.getName(),
                         column.getName(),
@@ -123,13 +123,13 @@ public class DerbyProvider extends ProviderAdapter<DerbyGlobalState, DerbyOption
         for (var table : schema.getDatabaseTables()) {
             if (table.getNrRows(globalState) == 0) {
                 for (int i = 0; i < 5; i++) {
-                    String insertQuery = DerbyInsertGenerator.generateInsert(globalState);
+                    var insertQuery = DerbyInsertGenerator.generateInsert(globalState);
                     try {
                         globalState.executeSQL(insertQuery);
                         addedRows = true;
                     } catch (Exception e) {
-                        // 新增：记录异常到文件
-                        globalState.getLoggerNew().logException(e);
+                        // 新增：记录DQL错误
+                        globalState.getLoggerNew().logException(e, insertQuery);
                         // 继续尝试其他表
                     }
                 }

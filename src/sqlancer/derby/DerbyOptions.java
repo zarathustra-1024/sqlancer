@@ -26,6 +26,14 @@ public class DerbyOptions implements DBMSSpecificOptions<DerbyOracleFactory> {
         return oracle;
     }
 
+    @Parameter(names = "--derby-error-log", description = "Error log file path")
+    public String errorLogFile = null;
+
+    // 新增方法
+    public String getErrorLogFile() {
+        return errorLogFile;
+    }
+
     public String getDbPath() {
         return dbPath;
     }

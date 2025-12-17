@@ -37,8 +37,7 @@ public class DerbyProvider extends ProviderAdapter<DerbyGlobalState, DerbyOption
 
     @Override
     protected TestOracle<DerbyGlobalState> getTestOracle(DerbyGlobalState globalState) throws Exception {
-        List<? extends OracleFactory<DerbyGlobalState>> testOracleFactory =
-                globalState.getDbmsSpecificOptions().getTestOracleFactory();
+        var testOracleFactory = globalState.getDbmsSpecificOptions().getTestOracleFactory();
 
         boolean testOracleRequiresMoreThanZeroRows = testOracleFactory.stream()
                 .anyMatch(OracleFactory::requiresAllTablesToContainRows);
@@ -76,16 +75,18 @@ public class DerbyProvider extends ProviderAdapter<DerbyGlobalState, DerbyOption
     protected String getQueryPlan(String selectStr, DerbyGlobalState globalState) throws Exception {
         String explainQuery = "EXPLAIN " + selectStr;
         try {
-            SQLQueryAdapter query = new SQLQueryAdapter(explainQuery);
+            var query = new SQLQueryAdapter(explainQuery);
             var resultSet = globalState.executeStatementAndGetAsResultSet(query);
 
-            StringBuilder planBuilder = new StringBuilder();
+            var planBuilder = new StringBuilder();
             while (resultSet.next()) {
                 planBuilder.append(resultSet.getString(1)).append("\n");
             }
 
             return planBuilder.toString().trim();
         } catch (Exception e) {
+            // 新增：记录异常到文件
+            globalState.getLoggerNew().logException(e);
             return "";
         }
     }
@@ -108,6 +109,8 @@ public class DerbyProvider extends ProviderAdapter<DerbyGlobalState, DerbyOption
                 globalState.executeSQL(updateQuery);
             }
         } catch (Exception e) {
+            // 新增：记录异常到文件
+            globalState.getLoggerNew().logException(e);
             throw new IgnoreMeException();
         }
     }
@@ -125,6 +128,8 @@ public class DerbyProvider extends ProviderAdapter<DerbyGlobalState, DerbyOption
                         globalState.executeSQL(insertQuery);
                         addedRows = true;
                     } catch (Exception e) {
+                        // 新增：记录异常到文件
+                        globalState.getLoggerNew().logException(e);
                         // 继续尝试其他表
                     }
                 }
@@ -132,7 +137,6 @@ public class DerbyProvider extends ProviderAdapter<DerbyGlobalState, DerbyOption
         }
 
         return addedRows;
-
     }
 
     @Override
